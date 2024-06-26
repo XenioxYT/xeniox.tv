@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=ABeeZee:ital@0;1&family=Be+Vietnam+Pro:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Xeniox</title>
@@ -11,7 +14,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: 'Arial', sans-serif;
+            font-family: 'Be Vietnam Pro', sans-serif;
             background-color: #000000;
             color: #ffffff;
             cursor: none;
@@ -48,13 +51,14 @@
             font-weight: bold;
             user-select: none;
             opacity: 0;
-            transform: scale(0.1);
+            transform: scale(0.1) translate3d(0, 0, 0);
             filter: blur(20px);
             transition: opacity 0.5s, transform 0.5s, filter 0.5s;
+            will-change: transform;
         }
         .parallax-layer.active {
             opacity: 1;
-            transform: scale(1);
+            transform: scale(1) translate3d(0, 0, 0);
             filter: blur(0px);
         }
         .outline {
@@ -131,7 +135,7 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.9);
-            z-index: 9998; /* Below the cursor */
+            z-index: 9998;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -139,12 +143,10 @@
             pointer-events: none;
             transition: opacity 0.5s ease;
         }
-
         #blogContent.active {
             opacity: 1;
             pointer-events: all;
         }
-
         #blogInner {
             color: #ffffff;
             padding: 40px;
@@ -154,11 +156,9 @@
             transform: scale(0.9);
             transition: transform 0.5s ease;
         }
-
         #blogContent.active #blogInner {
             transform: scale(1);
         }
-
         #closeBlog {
             position: absolute;
             top: 20px;
@@ -168,7 +168,6 @@
             cursor: none;
             z-index: 9999;
         }
-
         .blog-heading {
             cursor: none;
             padding: 10px;
@@ -176,15 +175,12 @@
             border: 1px solid #ffffff;
             transition: background-color 0.3s ease;
         }
-
         .blog-heading:hover {
             background-color: rgba(255, 255, 255, 0.1);
         }
-
         .blog-post {
             display: none;
         }
-
         .blog-post.active {
             display: block;
         }
@@ -216,10 +212,10 @@
             <div class="parallax-layer" style="z-index: 5;">XENIOX</div>
         </div>
         <div class="button-container">
-            <button class="social-button" data-color="#FF0000" onclick="window.open('https://youtube.com/xeniox', '_blank')">YouTube</button>
-            <button class="social-button" data-color="#6441A4" onclick="window.open('https://twitch.tv/xenioxyt', '_blank')">Twitch</button>
-            <button class="social-button" data-color="#333333" onclick="window.open('https://github.com/xenioxyt', '_blank')">GitHub</button>
-            <!-- <button class="social-button" data-color="#0077B5" onclick="window.open('https://xeniox.tv/blog', '_blank')">Blog</button> -->
+            <button class="social-button" data-color="#FF0000">YouTube</button>
+            <button class="social-button" data-color="#9146FF">Twitch</button>
+            <button class="social-button" data-color="#333333">GitHub</button>
+            <!-- <button class="social-button" data-color="#0077B5">Blog</button> -->
         </div>
     </div>
     <div id="cursor"></div>
@@ -246,30 +242,33 @@
                 this.baseSize = this.size;
                 this.speedX = Math.random() * 0.5 - 0.25;
                 this.speedY = Math.random() * 0.5 - 0.25;
+                this.opacity = 1;
             }
-
+        
             update() {
                 this.x += this.speedX;
                 this.y += this.speedY;
-
+        
                 if (this.x < 0 || this.x > canvas.width) this.speedX = -this.speedX;
                 if (this.y < 0 || this.y > canvas.height) this.speedY = -this.speedY;
-
+        
                 const dx = mouse.x - this.x;
                 const dy = mouse.y - this.y;
                 const distance = Math.sqrt(dx * dx + dy * dy);
                 const maxDistance = mouse.radius;
-
+        
                 if (distance < maxDistance) {
                     const effect = (maxDistance - distance) / maxDistance;
                     this.size = this.baseSize + (effect * 5);
                 } else {
                     this.size = this.baseSize;
                 }
+        
+                this.opacity = getOpacity(distance, innerRadius, outerRadius);
             }
-
+        
             draw() {
-                ctx.fillStyle = '#ffffff';
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.opacity})`;
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.fill();
@@ -278,14 +277,55 @@
 
         const particleArray = [];
         const particleDensity = 0.0002;
+        let grid;
+
+        class Grid {
+            constructor(width, height, cellSize) {
+                this.cellSize = cellSize;
+                this.cols = Math.ceil(width / cellSize);
+                this.rows = Math.ceil(height / cellSize);
+                this.cells = new Array(this.cols * this.rows).fill().map(() => []);
+            }
+
+            clear() {
+                this.cells.forEach(cell => cell.length = 0);
+            }
+
+            insert(particle) {
+                const col = Math.floor(particle.x / this.cellSize);
+                const row = Math.floor(particle.y / this.cellSize);
+                if (col >= 0 && col < this.cols && row >= 0 && row < this.rows) {
+                    this.cells[row * this.cols + col].push(particle);
+                }
+            }
+
+            getNearbyParticles(x, y, radius) {
+                const startCol = Math.max(0, Math.floor((x - radius) / this.cellSize));
+                const endCol = Math.min(this.cols - 1, Math.floor((x + radius) / this.cellSize));
+                const startRow = Math.max(0, Math.floor((y - radius) / this.cellSize));
+                const endRow = Math.min(this.rows - 1, Math.floor((y + radius) / this.cellSize));
+
+                const nearby = [];
+                for (let row = startRow; row <= endRow; row++) {
+                    for (let col = startCol; col <= endCol; col++) {
+                        nearby.push(...this.cells[row * this.cols + col]);
+                    }
+                }
+                return nearby;
+            }
+        }
 
         function init() {
             particleArray.length = 0;
+            innerRadius = mouse.radius;
+            outerRadius = innerRadius + 200;
             const particleCount = Math.floor(canvas.width * canvas.height * particleDensity);
             for (let i = 0; i < particleCount; i++) {
                 particleArray.push(new Particle());
             }
+            grid = new Grid(canvas.width, canvas.height, 100); // Cell size of 100px
         }
+
         init();
 
         let hoveredColor = null;
@@ -305,12 +345,32 @@
             return start * (1 - t) + end * t;
         }
         
+        let isColorTransitioning = false;
+
         function updateColor() {
             const t = 0.05; // Adjust this value to change transition speed
             currentColor.r = lerp(currentColor.r, targetColor.r, t);
             currentColor.g = lerp(currentColor.g, targetColor.g, t);
             currentColor.b = lerp(currentColor.b, targetColor.b, t);
             currentColor.a = lerp(currentColor.a, targetColor.a, t);
+
+            if (
+                Math.abs(currentColor.r - targetColor.r) < 0.1 &&
+                Math.abs(currentColor.g - targetColor.g) < 0.1 &&
+                Math.abs(currentColor.b - targetColor.b) < 0.1 &&
+                Math.abs(currentColor.a - targetColor.a) < 0.01
+            ) {
+                isColorTransitioning = false;
+            } else {
+                requestAnimationFrame(updateColor);
+            }
+        }
+
+        function startColorTransition() {
+            if (!isColorTransitioning) {
+                isColorTransitioning = true;
+                requestAnimationFrame(updateColor);
+            }
         }
         
         function getTriangleStrength(triangle) {
@@ -321,63 +381,80 @@
             return Math.max(0, 1 - avgDist / 100); // Normalized strength
         }
 
+        function getOpacity(distance, innerRadius, outerRadius) {
+            if (distance <= innerRadius) return 1;
+            if (distance >= outerRadius) return 0;
+            return 1 - (distance - innerRadius) / (outerRadius - innerRadius);
+        }
+
         function animate() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            const triangles = [];
+            grid.clear();
         
-            updateColor();
+            particleArray.forEach(particle => {
+                particle.update();
+                grid.insert(particle);
+            });
         
-            for (let i = 0; i < particleArray.length; i++) {
-                particleArray[i].update();
-                particleArray[i].draw();
-                
-                for (let j = i + 1; j < particleArray.length; j++) {
-                    const dx = particleArray[i].x - particleArray[j].x;
-                    const dy = particleArray[i].y - particleArray[j].y;
+            const innerRadius = mouse.radius;
+            const outerRadius = innerRadius + 200; // Increased culling radius
+            const visibleParticles = grid.getNearbyParticles(mouse.x, mouse.y, outerRadius);
+        
+            visibleParticles.forEach(particle => {
+                if (particle.opacity > 0) {
+                    particle.draw();
+                }
+            });
+
+            for (let i = 0; i < visibleParticles.length; i++) {
+                for (let j = i + 1; j < visibleParticles.length; j++) {
+                    const dx = visibleParticles[i].x - visibleParticles[j].x;
+                    const dy = visibleParticles[i].y - visibleParticles[j].y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
-                    
+
                     if (distance < 100) {
+                        const midX = (visibleParticles[i].x + visibleParticles[j].x) / 2;
+                        const midY = (visibleParticles[i].y + visibleParticles[j].y) / 2;
+                        const distanceToMouse = Math.sqrt((midX - mouse.x) ** 2 + (midY - mouse.y) ** 2);
+                        const opacity = getOpacity(distanceToMouse, innerRadius, outerRadius);
+
                         ctx.beginPath();
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / 100})`;
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * (1 - distance / 100)})`;
                         ctx.lineWidth = 0.5;
-                        ctx.moveTo(particleArray[i].x, particleArray[i].y);
-                        ctx.lineTo(particleArray[j].x, particleArray[j].y);
+                        ctx.moveTo(visibleParticles[i].x, visibleParticles[i].y);
+                        ctx.lineTo(visibleParticles[j].x, visibleParticles[j].y);
                         ctx.stroke();
-        
-                        // Check for triangles
-                        for (let k = j + 1; k < particleArray.length; k++) {
-                            const dx2 = particleArray[i].x - particleArray[k].x;
-                            const dy2 = particleArray[i].y - particleArray[k].y;
+
+                        // Check for triangles (simplified)
+                        for (let k = j + 1; k < visibleParticles.length; k++) {
+                            const dx2 = visibleParticles[i].x - visibleParticles[k].x;
+                            const dy2 = visibleParticles[i].y - visibleParticles[k].y;
                             const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-        
-                            const dx3 = particleArray[j].x - particleArray[k].x;
-                            const dy3 = particleArray[j].y - particleArray[k].y;
+
+                            const dx3 = visibleParticles[j].x - visibleParticles[k].x;
+                            const dy3 = visibleParticles[j].y - visibleParticles[k].y;
                             const distance3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
-        
+
                             if (distance2 < 100 && distance3 < 100) {
-                                triangles.push([
-                                    particleArray[i],
-                                    particleArray[j],
-                                    particleArray[k]
-                                ]);
+                                const centerX = (visibleParticles[i].x + visibleParticles[j].x + visibleParticles[k].x) / 3;
+                                const centerY = (visibleParticles[i].y + visibleParticles[j].y + visibleParticles[k].y) / 3;
+                                const distanceToMouse = Math.sqrt((centerX - mouse.x) ** 2 + (centerY - mouse.y) ** 2);
+                                const opacity = getOpacity(distanceToMouse, innerRadius, outerRadius);
+
+                                const strength = getTriangleStrength([visibleParticles[i], visibleParticles[j], visibleParticles[k]]);
+                                ctx.fillStyle = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${currentColor.a * strength * opacity})`;
+                                ctx.beginPath();
+                                ctx.moveTo(visibleParticles[i].x, visibleParticles[i].y);
+                                ctx.lineTo(visibleParticles[j].x, visibleParticles[j].y);
+                                ctx.lineTo(visibleParticles[k].x, visibleParticles[k].y);
+                                ctx.closePath();
+                                ctx.fill();
                             }
                         }
                     }
                 }
             }
-        
-            // Fill detected triangles
-            triangles.forEach(triangle => {
-                const strength = getTriangleStrength(triangle);
-                ctx.fillStyle = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${currentColor.a * strength})`;
-                ctx.beginPath();
-                ctx.moveTo(triangle[0].x, triangle[0].y);
-                ctx.lineTo(triangle[1].x, triangle[1].y);
-                ctx.lineTo(triangle[2].x, triangle[2].y);
-                ctx.closePath();
-                ctx.fill();
-            });
-        
+
             requestAnimationFrame(animate);
         }
         animate();
@@ -446,7 +523,7 @@
                     const speed = (index + 1) * 0.5;
                     const x = (xAxis * speed);
                     const y = (yAxis * speed);
-                    layer.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+                    layer.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1)`;
                 });
             }
 
@@ -479,7 +556,7 @@
 
         cursorX = targetX = window.innerWidth / 2;
         cursorY = targetY = window.innerHeight / 2;
-        updateCursor();
+        requestAnimationFrame(updateCursor);
 
         window.addEventListener('resize', function() {
             canvas.width = window.innerWidth;
@@ -537,7 +614,9 @@
                     e.preventDefault();
                     loadBlogPage();
                 } else {
-                    window.open(button.getAttribute('onclick').match(/'([^']+)'/)[1], '_blank');
+                    window.open(button.getAttribute('data-color') === '#FF0000' ? 'https://youtube.com/xeniox' :
+                                button.getAttribute('data-color') === '#6441A4' ? 'https://twitch.tv/xenioxyt' :
+                                'https://github.com/xenioxyt', '_blank');
                 }
             });
 
@@ -545,17 +624,16 @@
                 hoveredColor = button.getAttribute('data-color');
                 const rgb = hexToRgb(hoveredColor);
                 targetColor = { r: rgb.r, g: rgb.g, b: rgb.b, a: 0.5 };
+                startColorTransition();
                 button.style.transform = 'translateY(-5px) scale(1.05)';
             });
 
             button.addEventListener('mouseout', () => {
                 targetColor = { r: 0, g: 0, b: 0, a: 0 };
+                startColorTransition();
                 button.style.transform = 'translateY(0) scale(1)';
             });
         });
-
-        // Remove the onclick attribute from the Blog button in HTML
-        document.querySelector('.social-button[data-color="#0077B5"]').removeAttribute('onclick');
     </script>
 </body>
 </html>
