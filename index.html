@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Xeniox</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background-color: #000000;
+            color: #ffffff;
+            cursor: none;
+            transition: background-color 0.5s ease;
+        }
+        canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        .parallax-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 50vh;
+        }
+        .parallax-layer {
+            position: absolute;
+            font-size: 15vw;
+            font-weight: bold;
+            user-select: none;
+            opacity: 0;
+            transform: scale(0.1);
+            filter: blur(20px);
+            transition: opacity 0.5s, transform 0.5s, filter 0.5s;
+        }
+        .parallax-layer.active {
+            opacity: 1;
+            transform: scale(1);
+            filter: blur(0px);
+        }
+        .outline {
+            -webkit-text-stroke: 2px white;
+            color: transparent;
+        }
+        .button-container {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .social-button {
+            padding: 12px 30px;
+            font-size: 1.2vw;
+            cursor: none;
+            background-color: #ffffff;
+            color: #000000;
+            border: none;
+            border-radius: 25px;
+            transition: all 0.3s ease, transform 0.1s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            position: relative;
+            overflow: hidden;
+        }
+        .social-button:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        .social-button::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+        .social-button:hover::after {
+            opacity: 1;
+        }
+        #cursor {
+            width: 40px;
+            height: 40px;
+            border: 2px solid white;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 9999;
+            transition: width 0.1s, height 0.1s;
+            left: 0;
+            top: 0;
+            opacity: 0.8;
+            backdrop-filter: blur(5px);
+        }
+        #blurEffect {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9998;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,0,0,0.5) 0%, rgba(0,0,0,0) 70%);
+            transition: width 0.3s, height 0.3s;
+        }
+        #blogContent {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 9998; /* Below the cursor */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        #blogContent.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        #blogInner {
+            color: #ffffff;
+            padding: 40px;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow-y: auto;
+            transform: scale(0.9);
+            transition: transform 0.5s ease;
+        }
+
+        #blogContent.active #blogInner {
+            transform: scale(1);
+        }
+
+        #closeBlog {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 24px;
+            color: #ffffff;
+            cursor: none;
+            z-index: 9999;
+        }
+
+        .blog-heading {
+            cursor: none;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ffffff;
+            transition: background-color 0.3s ease;
+        }
+
+        .blog-heading:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .blog-post {
+            display: none;
+        }
+
+        .blog-post.active {
+            display: block;
+        }
+        #pageTransition {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            z-index: 10000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #pageTransition.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particleCanvas"></canvas>
+    <div class="content">
+        <div class="parallax-container">
+            <div class="parallax-layer outline" style="z-index: 2;">XENIOX</div>
+            <div class="parallax-layer outline" style="z-index: 3;">XENIOX</div>
+            <div class="parallax-layer outline" style="z-index: 4;">XENIOX</div>
+            <div class="parallax-layer" style="z-index: 5;">XENIOX</div>
+        </div>
+        <div class="button-container">
+            <button class="social-button" data-color="#FF0000" onclick="window.open('https://youtube.com/xeniox', '_blank')">YouTube</button>
+            <button class="social-button" data-color="#6441A4" onclick="window.open('https://twitch.tv/xenioxyt', '_blank')">Twitch</button>
+            <button class="social-button" data-color="#333333" onclick="window.open('https://github.com/xenioxyt', '_blank')">GitHub</button>
+            <!-- <button class="social-button" data-color="#0077B5" onclick="window.open('https://xeniox.tv/blog', '_blank')">Blog</button> -->
+        </div>
+    </div>
+    <div id="cursor"></div>
+    <div id="blurEffect"></div>
+    <div id="pageTransition"></div>
+
+    <script>
+        const canvas = document.getElementById('particleCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let mouse = {
+            x: undefined,
+            y: undefined,
+            radius: 150
+        }
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 1 + 0.5;
+                this.baseSize = this.size;
+                this.speedX = Math.random() * 0.5 - 0.25;
+                this.speedY = Math.random() * 0.5 - 0.25;
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x < 0 || this.x > canvas.width) this.speedX = -this.speedX;
+                if (this.y < 0 || this.y > canvas.height) this.speedY = -this.speedY;
+
+                const dx = mouse.x - this.x;
+                const dy = mouse.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                const maxDistance = mouse.radius;
+
+                if (distance < maxDistance) {
+                    const effect = (maxDistance - distance) / maxDistance;
+                    this.size = this.baseSize + (effect * 5);
+                } else {
+                    this.size = this.baseSize;
+                }
+            }
+
+            draw() {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        const particleArray = [];
+        const particleDensity = 0.0002;
+
+        function init() {
+            particleArray.length = 0;
+            const particleCount = Math.floor(canvas.width * canvas.height * particleDensity);
+            for (let i = 0; i < particleCount; i++) {
+                particleArray.push(new Particle());
+            }
+        }
+        init();
+
+        let hoveredColor = null;
+        let currentColor = { r: 0, g: 0, b: 0, a: 0 };
+        let targetColor = { r: 0, g: 0, b: 0, a: 0 };
+        
+        function hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+        
+        function lerp(start, end, t) {
+            return start * (1 - t) + end * t;
+        }
+        
+        function updateColor() {
+            const t = 0.05; // Adjust this value to change transition speed
+            currentColor.r = lerp(currentColor.r, targetColor.r, t);
+            currentColor.g = lerp(currentColor.g, targetColor.g, t);
+            currentColor.b = lerp(currentColor.b, targetColor.b, t);
+            currentColor.a = lerp(currentColor.a, targetColor.a, t);
+        }
+        
+        function getTriangleStrength(triangle) {
+            const dist1 = Math.hypot(triangle[0].x - triangle[1].x, triangle[0].y - triangle[1].y);
+            const dist2 = Math.hypot(triangle[1].x - triangle[2].x, triangle[1].y - triangle[2].y);
+            const dist3 = Math.hypot(triangle[2].x - triangle[0].x, triangle[2].y - triangle[0].y);
+            const avgDist = (dist1 + dist2 + dist3) / 3;
+            return Math.max(0, 1 - avgDist / 100); // Normalized strength
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            const triangles = [];
+        
+            updateColor();
+        
+            for (let i = 0; i < particleArray.length; i++) {
+                particleArray[i].update();
+                particleArray[i].draw();
+                
+                for (let j = i + 1; j < particleArray.length; j++) {
+                    const dx = particleArray[i].x - particleArray[j].x;
+                    const dy = particleArray[i].y - particleArray[j].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < 100) {
+                        ctx.beginPath();
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / 100})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.moveTo(particleArray[i].x, particleArray[i].y);
+                        ctx.lineTo(particleArray[j].x, particleArray[j].y);
+                        ctx.stroke();
+        
+                        // Check for triangles
+                        for (let k = j + 1; k < particleArray.length; k++) {
+                            const dx2 = particleArray[i].x - particleArray[k].x;
+                            const dy2 = particleArray[i].y - particleArray[k].y;
+                            const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+        
+                            const dx3 = particleArray[j].x - particleArray[k].x;
+                            const dy3 = particleArray[j].y - particleArray[k].y;
+                            const distance3 = Math.sqrt(dx3 * dx3 + dy3 * dy3);
+        
+                            if (distance2 < 100 && distance3 < 100) {
+                                triangles.push([
+                                    particleArray[i],
+                                    particleArray[j],
+                                    particleArray[k]
+                                ]);
+                            }
+                        }
+                    }
+                }
+            }
+        
+            // Fill detected triangles
+            triangles.forEach(triangle => {
+                const strength = getTriangleStrength(triangle);
+                ctx.fillStyle = `rgba(${currentColor.r}, ${currentColor.g}, ${currentColor.b}, ${currentColor.a * strength})`;
+                ctx.beginPath();
+                ctx.moveTo(triangle[0].x, triangle[0].y);
+                ctx.lineTo(triangle[1].x, triangle[1].y);
+                ctx.lineTo(triangle[2].x, triangle[2].y);
+                ctx.closePath();
+                ctx.fill();
+            });
+        
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        const cursor = document.getElementById('cursor');
+        const blurEffect = document.getElementById('blurEffect');
+        const parallaxLayers = document.querySelectorAll('.parallax-layer');
+        const socialButtons = document.querySelectorAll('.social-button');
+
+        let cursorX = 0;
+        let cursorY = 0;
+        let targetX = 0;
+        let targetY = 0;
+        let velocityX = 0;
+        let velocityY = 0;
+        let speed = 0;
+        let cursorSize = 40;
+        let isClicking = false;
+
+        function updateCursor() {
+            const dx = targetX - cursorX;
+            const dy = targetY - cursorY;
+            
+            velocityX = velocityX * 0.8 + dx * 0.2;
+            velocityY = velocityY * 0.8 + dy * 0.2;
+            
+            cursorX += velocityX * 0.15;
+            cursorY += velocityY * 0.15;
+
+            speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+
+            const angle = Math.atan2(velocityY, velocityX);
+            const deformation = speed * 0.01;
+            const scaleX = 1 + deformation;
+            const scaleY = 1 / scaleX;
+
+            cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) rotate(${angle}rad) scale(${scaleX}, ${scaleY})`;
+            blurEffect.style.transform = `translate(${cursorX - 150}px, ${cursorY - 150}px)`;
+
+            const size = hoveredButton ? 60 : Math.max(cursorSize, cursorSize + speed * 0.2);
+            cursor.style.width = `${size}px`;
+            cursor.style.height = `${size}px`;
+
+            const blurSize = Math.max(300, 300 + speed * 2);
+            blurEffect.style.width = `${blurSize}px`;
+            blurEffect.style.height = `${blurSize}px`;
+
+            requestAnimationFrame(updateCursor);
+        }
+
+        let isTextAnimating = true;
+        let hoveredButton = null;
+
+        document.addEventListener('mousemove', (e) => {
+            targetX = e.clientX - 20;
+            targetY = e.clientY - 20;
+
+            mouse.x = e.x;
+            mouse.y = e.y;
+
+            if (!isTextAnimating) {
+                const xAxis = (window.innerWidth / 2 - e.pageX) / 25;
+                const yAxis = (window.innerHeight / 2 - e.pageY) / 25;
+
+                parallaxLayers.forEach((layer, index) => {
+                    const speed = (index + 1) * 0.5;
+                    const x = (xAxis * speed);
+                    const y = (yAxis * speed);
+                    layer.style.transform = `translate(${x}px, ${y}px) scale(1)`;
+                });
+            }
+
+            // Magnet effect for buttons
+            socialButtons.forEach(button => {
+                const rect = button.getBoundingClientRect();
+                const buttonCenterX = rect.left + rect.width / 2;
+                const buttonCenterY = rect.top + rect.height / 2;
+                const distance = Math.sqrt(Math.pow(e.clientX - buttonCenterX, 2) + Math.pow(e.clientY - buttonCenterY, 2));
+
+                if (distance < 100) {
+                    const strength = 1 - distance / 100;
+                    targetX += (buttonCenterX - e.clientX) * strength * 0.5;
+                    targetY += (buttonCenterY - e.clientY) * strength * 0.5;
+                }
+            });
+        });
+
+        document.addEventListener('mousedown', () => {
+            isClicking = true;
+            cursorSize = 35;
+            cursor.style.transform += ' scale(0.9)';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isClicking = false;
+            cursorSize = 40;
+            cursor.style.transform = cursor.style.transform.replace(' scale(0.9)', '');
+        });
+
+        cursorX = targetX = window.innerWidth / 2;
+        cursorY = targetY = window.innerHeight / 2;
+        updateCursor();
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            init();
+        });
+
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                let lastLayerIndex = parallaxLayers.length - 1;
+                parallaxLayers.forEach((layer, index) => {
+                    setTimeout(() => {
+                        layer.classList.add('active');
+                        if (index === lastLayerIndex) {
+                            setTimeout(() => {
+                                parallaxLayers.forEach(l => l.style.transition = 'transform 0.3s ease-out');
+                                isTextAnimating = false;
+                                animateButtons();
+                            }, 500);
+                        }
+                    }, index * 100);
+                });
+            }, 500);
+        });
+
+        function animateButtons() {
+            socialButtons.forEach((button, index) => {
+                setTimeout(() => {
+                    button.style.transition = 'opacity 0.5s, transform 0.5s';
+                    button.style.opacity = '1';
+                    button.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        }
+
+        function loadBlogPage() {
+            const pageTransition = document.getElementById('pageTransition');
+            pageTransition.classList.add('active');
+
+            setTimeout(() => {
+                fetch('blog.html')
+                    .then(response => response.text())
+                    .then(html => {
+                        document.body.innerHTML = html;
+                        history.pushState(null, '', '/blog');
+                        pageTransition.classList.remove('active');
+                    });
+            }, 500);
+        }
+
+        // Modify the event listeners for social buttons
+        socialButtons.forEach(button => {
+            button.addEventListener('click', (e) => {
+                if (button.textContent === 'Blog') {
+                    e.preventDefault();
+                    loadBlogPage();
+                } else {
+                    window.open(button.getAttribute('onclick').match(/'([^']+)'/)[1], '_blank');
+                }
+            });
+
+            button.addEventListener('mouseover', () => {
+                hoveredColor = button.getAttribute('data-color');
+                const rgb = hexToRgb(hoveredColor);
+                targetColor = { r: rgb.r, g: rgb.g, b: rgb.b, a: 0.5 };
+                button.style.transform = 'translateY(-5px) scale(1.05)';
+            });
+
+            button.addEventListener('mouseout', () => {
+                targetColor = { r: 0, g: 0, b: 0, a: 0 };
+                button.style.transform = 'translateY(0) scale(1)';
+            });
+        });
+
+        // Remove the onclick attribute from the Blog button in HTML
+        document.querySelector('.social-button[data-color="#0077B5"]').removeAttribute('onclick');
+    </script>
+</body>
+</html>
