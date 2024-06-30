@@ -487,7 +487,7 @@
             speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
 
             const angle = Math.atan2(velocityY, velocityX);
-            const deformation = speed * 0.01;
+            const deformation = speed * 0.005;
             const scaleX = 1 + deformation;
             const scaleY = 1 / scaleX;
 
