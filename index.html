@@ -14,7 +14,7 @@
             width: 100%;
             height: 100%;
             overflow: hidden;
-            font-family: 'Be Vietnam Pro', sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #000000;
             color: #ffffff;
             cursor: none;
@@ -45,6 +45,15 @@
             width: 100%;
             height: 50vh;
         }
+        @keyframes colorChange {
+            0% { -webkit-text-stroke-color: var(--start-color); }
+            100% { -webkit-text-stroke-color: var(--end-color); }
+        }
+        
+        @keyframes textColorChange {
+            0% { color: var(--start-color); }
+            100% { color: var(--end-color); }
+        }
         .parallax-layer {
             position: absolute;
             font-size: 15vw;
@@ -53,7 +62,7 @@
             opacity: 0;
             transform: scale(0.1) translate3d(0, 0, 0);
             filter: blur(20px);
-            transition: opacity 0.5s, transform 0.5s, filter 0.5s;
+            transition: opacity 0.5s, transform 0.5s, filter 0.5ms;
             will-change: transform;
         }
         .parallax-layer.active {
@@ -79,7 +88,7 @@
             color: #000000;
             border: none;
             border-radius: 25px;
-            transition: all 0.3s ease, transform 0.1s ease;
+            transition: background-color 0.5s ease, color 0.5s ease, opacity 0.5s, transform 0.5s;
             opacity: 0;
             transform: translateY(20px);
             position: relative;
@@ -200,6 +209,163 @@
             opacity: 1;
             pointer-events: all;
         }
+        .music-player {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            opacity: 1; /* Changed from 0 to 1 */
+            transition: opacity 0.5s ease, transform 0.5s ease;
+            z-index: 1000;
+        }
+
+        .music-player:hover .recent-tracks {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+
+        .music-player.active {
+            opacity: 1;
+            transform: translateX(-50%) scale(1);
+        }
+
+        .album-art {
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-right: 20px;
+        }
+
+        .album-art img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .track-info {
+            color: white;
+        }
+
+        .track-name {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .track-artist, .track-album {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .recent-tracks {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            padding: 20px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            pointer-events: none;
+        }
+
+        .recent-track {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            opacity: 0;
+            transform: translateY(-10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+
+        .recent-track.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .recent-track img {
+            width: 50px;
+            height: 50px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        .recent-track-info {
+            color: white;
+        }
+
+        .recent-track-name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .recent-track-artist, .recent-track-album {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .top-items {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        .top-item {
+            width: 200px;
+            background: rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            border-radius: 10px;
+            padding: 20px;
+            color: white;
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+
+        .top-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .top-item img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+
+        .top-item-name {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .top-item-subtitle {
+            font-size: 14px;
+            opacity: 0.8;
+        }
+
+        .top-item-monthly {
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .top-item:hover .top-item-weekly {
+            display: none;
+        }
+
+        .top-item:hover .top-item-monthly {
+            display: block;
+            opacity: 1;
+        }
     </style>
 </head>
 <body>
@@ -215,12 +381,50 @@
             <button class="social-button" data-color="#FF0000">YouTube</button>
             <button class="social-button" data-color="#9146FF">Twitch</button>
             <button class="social-button" data-color="#333333">GitHub</button>
-            <!-- <button class="social-button" data-color="#0077B5">Blog</button> -->
+<!--             <button class="social-button" data-color="#0077B5">Blog</button> -->
         </div>
     </div>
     <div id="cursor"></div>
     <div id="blurEffect"></div>
     <div id="pageTransition"></div>
+    <div class="music-player" style="z-index: 100">
+        <div class="album-art">
+            <img src="" alt="Album Art">
+        </div>
+        <div class="track-info">
+            <div class="track-name"></div>
+            <div class="track-artist"></div>
+            <div class="track-album"></div>
+        </div>
+        <div class="recent-tracks"></div>
+    </div>
+
+    <!-- <div class="top-items" style="z-index: 99">
+        <div class="top-item" id="top-track">
+            <div class="top-item-weekly">
+                <img src="" alt="Top Track of the Week">
+                <div class="top-item-name"></div>
+                <div class="top-item-subtitle">Top Track of the Week</div>
+            </div>
+            <div class="top-item-monthly">
+                <img src="" alt="Top Track of the Month">
+                <div class="top-item-name"></div>
+                <div class="top-item-subtitle">Top Track of the Month</div>
+            </div>
+        </div>
+        <div class="top-item" id="top-artist">
+            <div class="top-item-weekly">
+                <img src="" alt="Top Artist of the Week">
+                <div class="top-item-name"></div>
+                <div class="top-item-subtitle">Top Artist of the Week</div>
+            </div>
+            <div class="top-item-monthly">
+                <img src="" alt="Top Artist of the Month">
+                <div class="top-item-name"></div>
+                <div class="top-item-subtitle">Top Artist of the Month</div>
+            </div>
+        </div>
+    </div> -->
 
     <script>
         const canvas = document.getElementById('particleCanvas');
@@ -331,15 +535,6 @@
         let hoveredColor = null;
         let currentColor = { r: 0, g: 0, b: 0, a: 0 };
         let targetColor = { r: 0, g: 0, b: 0, a: 0 };
-        
-        function hexToRgb(hex) {
-            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-            return result ? {
-                r: parseInt(result[1], 16),
-                g: parseInt(result[2], 16),
-                b: parseInt(result[3], 16)
-            } : null;
-        }
         
         function lerp(start, end, t) {
             return start * (1 - t) + end * t;
@@ -471,7 +666,7 @@
         let velocityX = 0;
         let velocityY = 0;
         let speed = 0;
-        let cursorSize = 40;
+        let cursorSize = 30;
         let isClicking = false;
 
         function updateCursor() {
@@ -487,14 +682,14 @@
             speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
 
             const angle = Math.atan2(velocityY, velocityX);
-            const deformation = speed * 0.01;
+            const deformation = speed * 0.005;
             const scaleX = 1 + deformation;
             const scaleY = 1 / scaleX;
 
             cursor.style.transform = `translate(${cursorX}px, ${cursorY}px) rotate(${angle}rad) scale(${scaleX}, ${scaleY})`;
             blurEffect.style.transform = `translate(${cursorX - 150}px, ${cursorY - 150}px)`;
 
-            const size = hoveredButton ? 60 : Math.max(cursorSize, cursorSize + speed * 0.2);
+            const size = hoveredButton ? 40 : Math.max(cursorSize, cursorSize + speed * 0.1);
             cursor.style.width = `${size}px`;
             cursor.style.height = `${size}px`;
 
@@ -544,13 +739,13 @@
 
         document.addEventListener('mousedown', () => {
             isClicking = true;
-            cursorSize = 35;
+            cursorSize = 18;
             cursor.style.transform += ' scale(0.9)';
         });
 
         document.addEventListener('mouseup', () => {
             isClicking = false;
-            cursorSize = 40;
+            cursorSize = 30;
             cursor.style.transform = cursor.style.transform.replace(' scale(0.9)', '');
         });
 
@@ -610,14 +805,24 @@
         // Modify the event listeners for social buttons
         socialButtons.forEach(button => {
             button.addEventListener('click', (e) => {
-                if (button.textContent === 'Blog') {
-                    e.preventDefault();
-                    loadBlogPage();
-                } else {
-                    window.open(button.getAttribute('data-color') === '#FF0000' ? 'https://youtube.com/xeniox' :
-                                button.getAttribute('data-color') === '#6441A4' ? 'https://twitch.tv/xenioxyt' :
-                                'https://github.com/xenioxyt', '_blank');
+                e.preventDefault(); // Prevent default action
+                const buttonColor = button.getAttribute('data-color');
+                let url;
+                switch(buttonColor) {
+                    case '#FF0000':
+                        url = 'https://youtube.com/xeniox';
+                        break;
+                    case '#9146FF':
+                        url = 'https://twitch.tv/xenioxyt';
+                        break;
+                    case '#333333':
+                        url = 'https://github.com/xenioxyt';
+                        break;
+                    default:
+                        console.error('Unknown button color');
+                        return;
                 }
+                window.open(url, '_blank');
             });
 
             button.addEventListener('mouseover', () => {
@@ -634,6 +839,200 @@
                 button.style.transform = 'translateY(0) scale(1)';
             });
         });
+        
+        function loadMusicData() {
+            fetch('music_data.json', { cache: 'no-store' })
+            .then(response => response.json())
+            .then(data => {
+                updateMusicPlayer(data);
+                //updateTopItems(data);
+            });
+        }
+
+        let previousData = null;
+
+        function updateMusicPlayer(data) {
+            // Check if the data is the same as last time
+            if (JSON.stringify(data) === JSON.stringify(previousData)) {
+                console.log("Data hasn't changed. Skipping update.");
+                return;
+            }
+        
+            // Update the previousData for the next comparison
+            previousData = JSON.parse(JSON.stringify(data));
+        
+            const musicPlayer = document.querySelector('.music-player');
+            const albumArt = musicPlayer.querySelector('.album-art img');
+            const trackName = musicPlayer.querySelector('.track-name');
+            const trackArtist = musicPlayer.querySelector('.track-artist');
+            const trackAlbum = musicPlayer.querySelector('.track-album');
+            const recentTracks = musicPlayer.querySelector('.recent-tracks');
+        
+            // Set current track
+            albumArt.src = data.current_track.album_art;
+            trackName.textContent = data.current_track.name;
+            trackArtist.textContent = data.current_track.artists.join(', ');
+            trackAlbum.textContent = data.current_track.album;
+        
+            // Apply color
+            if (data.current_track.dominant_color) {
+                applyColor(data.current_track.dominant_color);
+            }
+        
+            // Clear and re-add recent tracks
+            recentTracks.innerHTML = '';
+            data.recent_tracks.forEach((track, index) => {
+                const recentTrack = document.createElement('div');
+                recentTrack.classList.add('recent-track');
+                recentTrack.innerHTML = `
+                    <img src="${track.album_art}" alt="${track.album}">
+                    <div class="recent-track-info">
+                        <div class="recent-track-name">${track.name}</div>
+                        <div class="recent-track-artist">${track.artists.join(', ')}</div>
+                        <div class="recent-track-album">${track.album}</div>
+                    </div>
+                `;
+                recentTracks.appendChild(recentTrack);
+            });
+        
+            console.log(`Added ${data.recent_tracks.length} recent tracks.`);
+        
+            // Add hover effect
+            musicPlayer.addEventListener('mouseenter', () => {
+                recentTracks.querySelectorAll('.recent-track').forEach((track, index) => {
+                    setTimeout(() => {
+                        track.classList.add('active');
+                    }, index * 100);
+                });
+            });
+        
+            musicPlayer.addEventListener('mouseleave', () => {
+                recentTracks.querySelectorAll('.recent-track').forEach(track => {
+                    track.classList.remove('active');
+                });
+            });
+        }
+
+        function applyColor(newColor) {
+            const rgb = hexToRgb(newColor);
+            if (!rgb) {
+                console.error('Failed to apply color due to invalid input:', newColor);
+                return;
+            }
+        
+            const newColorRgb = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            const parallaxLayers = document.querySelectorAll('.parallax-layer');
+            const totalLayers = parallaxLayers.length;
+            const totalDuration = 2000; // Total animation duration in milliseconds
+            const stepDuration = 20; // Duration of each step in milliseconds
+        
+            parallaxLayers.forEach((layer, index) => {
+                const isOutline = layer.classList.contains('outline');
+                const delay = (totalLayers - index - 1) * (totalDuration / totalLayers);
+                
+                setTimeout(() => {
+                    const startColor = isOutline 
+                        ? getComputedStyle(layer).getPropertyValue('-webkit-text-stroke-color')
+                        : getComputedStyle(layer).color;
+                    
+                    const startRgb = hexToRgb(startColor);
+                    let progress = 0;
+        
+                    const intervalId = setInterval(() => {
+                        progress += stepDuration / (totalDuration / totalLayers);
+                        if (progress >= 1) {
+                            clearInterval(intervalId);
+                            progress = 1;
+                        }
+        
+                        const currentColor = interpolateColor(startRgb, rgb, progress);
+                        
+                        if (isOutline) {
+                            layer.style.webkitTextStrokeColor = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+                        } else {
+                            layer.style.color = `rgb(${currentColor.r}, ${currentColor.g}, ${currentColor.b})`;
+                        }
+                    }, stepDuration);
+                }, delay);
+            });
+        
+            // Update social buttons
+            socialButtons.forEach(button => {
+                button.style.backgroundColor = newColorRgb;
+                button.style.color = isColorLight(newColor) ? '#000000' : '#ffffff';
+            });
+        }
+        
+        function interpolateColor(color1, color2, factor) {
+            return {
+                r: Math.round(color1.r + factor * (color2.r - color1.r)),
+                g: Math.round(color1.g + factor * (color2.g - color1.g)),
+                b: Math.round(color1.b + factor * (color2.b - color1.b))
+            };
+        }
+        
+        function updateStartColors() {
+            const parallaxLayers = document.querySelectorAll('.parallax-layer');
+            parallaxLayers.forEach(layer => {
+                const isOutline = layer.classList.contains('outline');
+                const currentColor = isOutline 
+                    ? getComputedStyle(layer).getPropertyValue('-webkit-text-stroke-color')
+                    : getComputedStyle(layer).color;
+                layer.style.setProperty('--start-color', currentColor);
+            });
+        }
+
+        function hexToRgb(color) {
+            let r, g, b;
+            if (color.startsWith('#')) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(color);
+                return result ? {
+                    r: parseInt(result[1], 16),
+                    g: parseInt(result[2], 16),
+                    b: parseInt(result[3], 16)
+                } : null;
+            } else if (color.startsWith('rgb')) {
+                [r, g, b] = color.match(/\d+/g).map(Number);
+                return { r, g, b };
+            } else {
+                console.error('Invalid color format:', color);
+                return null;
+            }
+        }
+        
+
+        function isColorLight(color) {
+            const rgb = color.match(/\d+/g);
+            const brightness = (rgb[0] * 299 + rgb[1] * 587 + rgb[2] * 114) / 1000;
+            return brightness > 128;
+        }
+
+       // function updateTopItems(data) {
+       //     const topTrack = document.getElementById('top-track');
+       //     const topArtist = document.getElementById('top-artist');
+
+       //     // Update weekly top track
+        //    topTrack.querySelector('.top-item-weekly img').src = data.top_track_week.album_art;
+        //    topTrack.querySelector('.top-item-weekly .top-item-name').textContent = data.top_track_week.name;
+//
+  //          // Update monthly top track
+    //        topTrack.querySelector('.top-item-monthly img').src = data.top_track_month.album_art;
+      //      topTrack.querySelector('.top-item-monthly .top-item-name').textContent = data.top_track_month.name;
+//
+  //          // Update weekly top artist
+    //        topArtist.querySelector('.top-item-weekly img').src = data.top_artist_week.image;
+      //      topArtist.querySelector('.top-item-weekly .top-item-name').textContent = data.top_artist_week.name;
+//
+  //          // Update monthly top artist
+    //        topArtist.querySelector('.top-item-monthly img').src = data.top_artist_month.image;
+      //      topArtist.querySelector('.top-item-monthly .top-item-name').textContent = data.top_artist_month.name;
+       // }
+
+        // Load music data on page load
+        loadMusicData();
+
+        // Refresh music data every 30 seconds
+        setInterval(loadMusicData, 10000);
     </script>
 </body>
 </html>
